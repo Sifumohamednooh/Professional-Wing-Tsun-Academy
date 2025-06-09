@@ -1,0 +1,1224 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>إدارة اشتراكات بروفيشنال وينج تسون أكاديمي</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Tajawal -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        .rtl-form input[type="text"],
+        .rtl-form input[type="tel"],
+        .rtl-form input[type="date"],
+        .rtl-form input[type="number"],
+        .rtl-form textarea,
+        .rtl-form select {
+            direction: rtl;
+            text-align: right;
+        }
+        .rtl-form label {
+            text-align: right;
+            display: block;
+        }
+        .status-active {
+            color: #10B981; /* Green */
+        }
+        .status-expired {
+            color: #EF4444; /* Red */
+        }
+        .status-warning {
+            color: #F59E0B; /* Amber */
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .close-button {
+            color: #aaa;
+            float: left; /* Align to the left in RTL */
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: black;
+            text-decoration: none;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <header class="bg-slate-800 text-white p-4 shadow-md text-center">
+        <h1 class="text-3xl font-bold mb-2">اشتراكات بروفيشنال وينج تسون أكاديمي</h1>
+        <p class="text-lg">نظام إدارة الاشتراكات</p>
+        <div id="userInfo" class="text-sm mt-2">
+            معرف المستخدم: <span id="userIdDisplay">جاري التحميل...</span>
+        </div>
+    </header>
+
+    <main class="container py-6">
+        <!-- Alerts Section -->
+        <section id="alertsSection" class="mb-6">
+            <div id="alertsContainer" class="space-y-3">
+                <!-- Alerts will be dynamically inserted here -->
+            </div>
+        </section>
+
+        <!-- Student Form Section -->
+        <section class="bg-white p-6 rounded-lg shadow-md mb-8 rtl-form">
+            <h2 class="text-2xl font-semibold mb-4">إضافة / تعديل بيانات طالب</h2>
+            <form id="studentForm" class="space-y-4">
+                <input type="hidden" id="studentId">
+
+                <div>
+                    <label for="studentName" class="block text-sm font-medium text-gray-700 mb-1">اسم الطالب:</label>
+                    <input type="text" id="studentName" required
+                           class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label for="studentPhone" class="block text-sm font-medium text-gray-700 mb-1">رقم الهاتف:</label>
+                    <input type="tel" id="studentPhone" required pattern="^01[0-2,5]{1}[0-9]{8}$"
+                           class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label for="studentNotes" class="block text-sm font-medium text-gray-700 mb-1">ملاحظات إضافية:</label>
+                    <textarea id="studentNotes" rows="3"
+                              class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+
+                <div>
+                    <label for="subscriptionType" class="block text-sm font-medium text-gray-700 mb-1">نوع الاشتراك:</label>
+                    <select id="subscriptionType" required
+                            class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="regular">مجموعة عادية</option>
+                        <option value="chi_sao">مجموعة تشي ساو</option>
+                        <option value="private">برايفت (٤ أسابيع)</option>
+                    </select>
+                </div>
+
+                <div id="sessionBasedDetailsContainer" class="hidden border border-gray-200 p-4 rounded-md bg-gray-50">
+                    <h3 class="text-lg font-medium mb-3">تفاصيل الحصص (للاشتراكات العادية/تشي ساو)</h3>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">أيام التدريب:</label>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" name="trainingDays" value="0" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                <span class="text-gray-700">الأحد</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" name="trainingDays" value="1" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                <span class="text-gray-700">الاثنين</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" name="trainingDays" value="2" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                <span class="text-gray-700">الثلاثاء</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" name="trainingDays" value="3" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                <span class="text-gray-700">الأربعاء</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" name="trainingDays" value="4" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                <span class="text-gray-700">الخميس</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" name="trainingDays" value="5" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                <span class="text-gray-700">الجمعة</span>
+                            </label>
+                            <label class="flex items-center space-x-2">
+                                <input type="checkbox" name="trainingDays" value="6" class="form-checkbox h-4 w-4 text-blue-600 rounded">
+                                <span class="text-gray-700">السبت</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div id="dynamicTimesContainer" class="mt-4 space-y-3">
+                        <!-- Dynamic time inputs will be injected here -->
+                    </div>
+
+                    <div class="mt-4">
+                        <label for="totalSessions" class="block text-sm font-medium text-gray-700 mb-1">إجمالي عدد الحصص:</label>
+                        <input type="number" id="totalSessions" min="1" value="8" required
+                               class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+
+                <div>
+                    <label for="subscriptionStartDate" class="block text-sm font-medium text-gray-700 mb-1">تاريخ بدء الاشتراك:</label>
+                    <input type="date" id="subscriptionStartDate" required
+                           class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+
+                <div>
+                    <label for="manualEndDate" class="block text-sm font-medium text-gray-700 mb-1">تاريخ الانتهاء/التجديد اليدوي:</label>
+                    <input type="date" id="manualEndDate"
+                           class="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <p class="text-sm text-gray-500 mt-1">يستخدم لتجاوز تاريخ الانتهاء المحسوب تلقائيًا.</p>
+                </div>
+
+                <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 sm:space-x-reverse mt-6">
+                    <button type="submit"
+                            class="bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors shadow-md flex-grow">
+                        حفظ البيانات
+                    </button>
+                    <button type="button" id="clearFormButton"
+                            class="bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors shadow-md flex-grow">
+                        مسح النموذج (بدء جديد)
+                    </button>
+                </div>
+            </form>
+        </section>
+
+        <!-- Student List Section -->
+        <section class="bg-white p-6 rounded-lg shadow-md">
+            <div class="flex flex-col sm:flex-row justify-between items-center mb-4">
+                <h2 class="text-2xl font-semibold mb-3 sm:mb-0">قائمة الطلاب</h2>
+                <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 sm:space-x-reverse w-full sm:w-auto">
+                    <button id="exportToCsvButton"
+                            class="bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition-colors shadow-md w-full sm:w-auto">
+                        تصدير إلى Excel (CSV)
+                    </button>
+                    <input type="text" id="searchInput" placeholder="بحث بالاسم أو الهاتف..."
+                           class="w-full sm:w-64 p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-right">
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="min-w-full bg-white border border-gray-200 rounded-lg">
+                    <thead>
+                        <tr class="bg-gray-100 text-gray-600 uppercase text-sm leading-normal">
+                            <th class="py-3 px-6 text-right">الاسم</th>
+                            <th class="py-3 px-6 text-right">الهاتف</th>
+                            <th class="py-3 px-6 text-right">نوع الاشتراك</th>
+                            <th class="py-3 px-6 text-right">ملاحظات</th>
+                            <th class="py-3 px-6 text-right">تاريخ انتهاء/تجديد</th>
+                            <th class="py-3 px-6 text-right">الحالة</th>
+                            <th class="py-3 px-6 text-center">إجراءات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody" class="text-gray-700 text-sm font-light">
+                        <!-- Student rows will be dynamically inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteConfirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-xl font-bold">تأكيد الحذف</h3>
+                <span class="close-button" onclick="window.app.closeModal('deleteConfirmationModal')">&times;</span>
+            </div>
+            <p class="mb-6">هل أنت متأكد أنك تريد حذف الطالب <strong id="studentNameToDelete"></strong>؟</p>
+            <div class="flex justify-end space-x-3 space-x-reverse">
+                <button id="confirmDeleteButton"
+                        class="bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors shadow-md">
+                    حذف
+                </button>
+                <button onclick="window.app.closeModal('deleteConfirmationModal')"
+                        class="bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors shadow-md">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WhatsApp Confirmation Modal -->
+    <div id="whatsappConfirmationModal" class="modal">
+        <div class="modal-content">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="text-xl font-bold">تأكيد إرسال رسالة واتساب</h3>
+                <span class="close-button" onclick="window.app.closeModal('whatsappConfirmationModal')">&times;</span>
+            </div>
+            <p class="mb-4">سيتم إرسال الرسالة التالية عبر واتساب:</p>
+            <div id="whatsappMessagePreview" class="bg-gray-100 p-4 rounded-md mb-6 whitespace-pre-wrap text-sm">
+                <!-- WhatsApp message preview will be inserted here -->
+            </div>
+            <div class="flex justify-end space-x-3 space-x-reverse">
+                <button id="sendWhatsappButton"
+                        class="bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 transition-colors shadow-md">
+                    إرسال
+                </button>
+                <button onclick="window.app.closeModal('whatsappConfirmationModal')"
+                        class="bg-gray-300 text-gray-800 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors shadow-md">
+                    إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase SDK Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import {
+            getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc,
+            onSnapshot, query, where, Timestamp
+        } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Variables from Canvas Environment
+        // __app_id is MANDATORY: the current app ID provided in the canvas environment as a string.
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-academy-app';
+        // __firebase_config is MANDATORY: firebase config provided in the canvas environment as a string.
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        // __initial_auth_token is MANDATORY: Firebase custom auth token string automatically provided within the Canvas environment.
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        // Firebase Initialization
+        let app;
+        let db;
+        let auth;
+        let userId = null; // Will be set after authentication
+        let studentsCollectionRef; // Reference to the Firestore collection
+        let allStudents = []; // Cache all students for filtering/CSV export
+
+        // Initialize Firebase when the window loads
+        window.onload = async () => {
+            try {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+
+                // Sign in with custom token if available, otherwise anonymously
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // Listen for authentication state changes
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        userId = user.uid;
+                        document.getElementById('userIdDisplay').textContent = userId;
+                        // Define the collection path using the userId
+                        studentsCollectionRef = collection(db, `artifacts/${appId}/users/${userId}/students_v8`);
+                        // Set up real-time listener for students data
+                        listenForStudentsData();
+                    } else {
+                        // User is signed out, handle as needed
+                        userId = null;
+                        document.getElementById('userIdDisplay').textContent = 'غير متوفر';
+                        showAlert('لم يتم تسجيل الدخول. بعض الميزات قد لا تعمل بشكل كامل.', 'warning');
+                    }
+                });
+
+            } catch (error) {
+                console.error("Error initializing Firebase:", error);
+                showAlert(`خطأ في تهيئة Firebase: ${error.message}`, 'error');
+            }
+        };
+
+        // --- Utility Functions ---
+
+        /**
+         * Converts time from "HH:mm" format to 12-hour format with AM/PM.
+         * @param {string} timeString_HHmm - Time string in "HH:mm" (e.g., "14:30").
+         * @returns {string} Formatted time string (e.g., "02:30 م").
+         */
+        function formatTimeTo12Hour(timeString_HHmm) {
+            if (!timeString_HHmm) return '';
+            const [hours, minutes] = timeString_HHmm.split(':').map(Number);
+            const period = hours >= 12 ? 'م' : 'ص';
+            const displayHours = hours % 12 || 12; // Convert 0 to 12 for 12 AM
+            return `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')} ${period}`;
+        }
+
+        /**
+         * Formats a Date object into a readable Arabic date string.
+         * @param {Date | Timestamp} dateObject - The Date object or Firebase Timestamp.
+         * @returns {string} Formatted date string (e.g., "١٥ يناير ٢٠٢٣").
+         */
+        function formatDate(dateObject) {
+            if (!dateObject) return '';
+            let date;
+            if (dateObject instanceof Timestamp) {
+                date = dateObject.toDate();
+            } else if (dateObject instanceof Date) {
+                date = dateObject;
+            } else {
+                return ''; // Invalid input
+            }
+            return new Intl.DateTimeFormat('ar-EG', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            }).format(date);
+        }
+
+        /**
+         * Formats a Date object into "YYYY-MM-DD" for CSV export.
+         * @param {Date | Timestamp} dateObject - The Date object or Firebase Timestamp.
+         * @returns {string} Formatted date string (e.g., "2023-01-15").
+         */
+        function formatDateForCSV(dateObject) {
+            if (!dateObject) return '';
+            let date;
+            if (dateObject instanceof Timestamp) {
+                date = dateObject.toDate();
+            } else if (dateObject instanceof Date) {
+                date = dateObject;
+            } else {
+                return ''; // Invalid input
+            }
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        /**
+         * Formats a Date object into "YYYY-MM-DD" suitable for HTML date input fields.
+         * @param {Date | Timestamp} dateObject - The Date object or Firebase Timestamp.
+         * @returns {string} Formatted date string (e.g., "2023-01-15").
+         */
+        function dateToInputFormat(dateObject) {
+            if (!dateObject) return '';
+            let date;
+            if (dateObject instanceof Timestamp) {
+                date = dateObject.toDate();
+            } else if (dateObject instanceof Date) {
+                date = dateObject;
+            } else {
+                return ''; // Invalid input
+            }
+            return formatDateForCSV(date); // Same format required
+        }
+
+        /**
+         * Displays a temporary alert message.
+         * @param {string} message - The message to display.
+         * @param {'success'|'error'|'warning'|'info'} type - Type of alert for styling.
+         */
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('alertsContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `p-3 rounded-md text-sm text-right ${
+                type === 'success' ? 'bg-green-100 text-green-800' :
+                type === 'error' ? 'bg-red-100 text-red-800' :
+                type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
+                'bg-blue-100 text-blue-800'
+            }`;
+            alertDiv.textContent = message;
+            alertsContainer.prepend(alertDiv); // Add to top
+
+            setTimeout(() => {
+                alertDiv.remove();
+            }, 5000); // Remove after 5 seconds
+        }
+
+        // --- Dynamic Time Inputs Logic ---
+
+        const trainingDaysCheckboxes = document.querySelectorAll('input[name="trainingDays"]');
+        const dynamicTimesContainer = document.getElementById('dynamicTimesContainer');
+        const sessionBasedDetailsContainer = document.getElementById('sessionBasedDetailsContainer');
+        const subscriptionTypeSelect = document.getElementById('subscriptionType');
+
+        // Map day values (0-6) to Arabic day names
+        const dayNamesArabic = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
+
+        /**
+         * Renders input fields for times for a specific day.
+         * @param {string} dayValue - The numeric value of the day (0-6).
+         * @param {string} dayName - The Arabic name of the day.
+         * @param {string[]} [times_HHmm=[]] - An array of time strings in "HH:mm" to pre-fill.
+         */
+        function renderDayTimeInputs(dayValue, dayName, times_HHmm = []) {
+            let dayContainer = dynamicTimesContainer.querySelector(`#day-${dayValue}-times`);
+
+            if (!dayContainer) {
+                // Create new container if it doesn't exist
+                dayContainer = document.createElement('div');
+                dayContainer.id = `day-${dayValue}-times`;
+                dayContainer.className = 'border-t border-gray-200 pt-3 mt-3 first:border-t-0 first:pt-0 first:mt-0';
+                dayContainer.innerHTML = `
+                    <h4 class="text-md font-semibold mb-2">مواعيد ${dayName}:</h4>
+                    <div class="flex flex-col space-y-2" id="times-list-${dayValue}"></div>
+                    <button type="button" class="add-time-button mt-2 bg-blue-100 text-blue-700 px-3 py-1 rounded-md text-sm hover:bg-blue-200 transition-colors shadow-sm">
+                        + إضافة وقت آخر
+                    </button>
+                `;
+                dynamicTimesContainer.appendChild(dayContainer);
+                dayContainer.querySelector('.add-time-button').addEventListener('click', () => addTimeInput(dayValue));
+            }
+
+            const timesList = dayContainer.querySelector(`#times-list-${dayValue}`);
+            timesList.innerHTML = ''; // Clear existing times before rendering
+
+            // If no times provided, add one empty input by default
+            if (times_HHmm.length === 0) {
+                addTimeInput(dayValue);
+            } else {
+                times_HHmm.forEach(time => addTimeInput(dayValue, time));
+            }
+        }
+
+        /**
+         * Adds a single time input field for a given day.
+         * @param {string} dayValue - The numeric value of the day.
+         * @param {string} [initialTime=''] - Initial time value in "HH:mm".
+         */
+        function addTimeInput(dayValue, initialTime = '') {
+            const timesList = dynamicTimesContainer.querySelector(`#times-list-${dayValue}`);
+            const timeInputWrapper = document.createElement('div');
+            timeInputWrapper.className = 'flex items-center space-x-2 space-x-reverse time-input-wrapper'; // RTL spacing
+            timeInputWrapper.innerHTML = `
+                <input type="time" value="${initialTime}" class="flex-grow p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-right time-input">
+                <button type="button" class="remove-time-button text-red-600 hover:text-red-800 text-xl font-bold p-1">
+                    &times;
+                </button>
+            `;
+            timesList.appendChild(timeInputWrapper);
+
+            timeInputWrapper.querySelector('.remove-time-button').addEventListener('click', (event) => {
+                event.target.closest('.time-input-wrapper').remove();
+                // If no time inputs left for a day, uncheck the day checkbox
+                if (timesList.children.length === 0) {
+                    const checkbox = document.querySelector(`input[name="trainingDays"][value="${dayValue}"]`);
+                    if (checkbox) checkbox.checked = false;
+                    dynamicTimesContainer.querySelector(`#day-${dayValue}-times`).remove();
+                }
+            });
+        }
+
+        /**
+         * Updates the dynamic times container based on checked training days.
+         * @param {object} [trainingSchedule={}] - Optional: existing training schedule to pre-fill times.
+         */
+        function updateDynamicTimesUI(trainingSchedule = {}) {
+            const checkedDays = Array.from(trainingDaysCheckboxes)
+                .filter(cb => cb.checked)
+                .map(cb => cb.value);
+
+            // Remove containers for unchecked days
+            Array.from(dynamicTimesContainer.children).forEach(dayContainer => {
+                const dayValue = dayContainer.id.split('-')[1];
+                if (!checkedDays.includes(dayValue)) {
+                    dayContainer.remove();
+                }
+            });
+
+            // Add/update containers for checked days
+            checkedDays.forEach(dayValue => {
+                const dayName = dayNamesArabic[parseInt(dayValue)];
+                const times = trainingSchedule[dayValue] || [];
+                renderDayTimeInputs(dayValue, dayName, times);
+            });
+
+            // Show/hide session based details container
+            const isSessionBased = subscriptionTypeSelect.value === 'regular' || subscriptionTypeSelect.value === 'chi_sao';
+            sessionBasedDetailsContainer.classList.toggle('hidden', !isSessionBased);
+        }
+
+        // Event listener for subscription type change
+        subscriptionTypeSelect.addEventListener('change', updateDynamicTimesUI);
+
+        // Event listeners for training days checkboxes
+        trainingDaysCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', () => updateDynamicTimesUI());
+        });
+
+        // --- Subscription Calculation Logic ---
+
+        /**
+         * Gathers the training schedule from the UI (checked days and entered times).
+         * @returns {Object.<string, string[]>} A dictionary where keys are day values (0-6) and values are arrays of time strings ("HH:mm").
+         */
+        function getTrainingScheduleFromUI() {
+            const schedule = {};
+            Array.from(trainingDaysCheckboxes)
+                .filter(cb => cb.checked)
+                .forEach(cb => {
+                    const dayValue = cb.value;
+                    const timesList = dynamicTimesContainer.querySelector(`#times-list-${dayValue}`);
+                    if (timesList) {
+                        schedule[dayValue] = Array.from(timesList.querySelectorAll('.time-input'))
+                            .map(input => input.value)
+                            .filter(time => time); // Filter out empty time inputs
+                    }
+                });
+            return schedule;
+        }
+
+        /**
+         * Generates potential session slots for 4 weeks based on the given schedule and start date.
+         * @param {Date} startDate - The start date of the subscription.
+         * @param {Object.<string, string[]>} schedule - The training schedule.
+         * @returns {Date[]} An array of Date objects for all potential session slots.
+         */
+        function generatePotentialSessionSlots(startDate, schedule) {
+            const potentialSessions = [];
+            const startOfDay = new Date(startDate);
+            startOfDay.setHours(0, 0, 0, 0); // Normalize to start of day
+
+            // Iterate for 4 weeks (28 days)
+            for (let i = 0; i < 28; i++) {
+                const currentDate = new Date(startOfDay);
+                currentDate.setDate(startOfDay.getDate() + i);
+                const dayOfWeek = currentDate.getDay().toString(); // 0 for Sunday, 6 for Saturday
+
+                if (schedule[dayOfWeek]) {
+                    schedule[dayOfWeek].forEach(time_HHmm => {
+                        const [hours, minutes] = time_HHmm.split(':').map(Number);
+                        const sessionDate = new Date(currentDate);
+                        sessionDate.setHours(hours, minutes, 0, 0);
+                        potentialSessions.push(sessionDate);
+                    });
+                }
+            }
+            // Sort sessions chronologically
+            potentialSessions.sort((a, b) => a.getTime() - b.getTime());
+            return potentialSessions;
+        }
+
+        /**
+         * Calculates the subscription end date and booked sessions based on form inputs.
+         * @returns {object} An object containing finalEndDate (Date) and bookedSessions (Array of Dates).
+         */
+        function calculateSubscriptionDetails() {
+            const subscriptionType = subscriptionTypeSelect.value;
+            const startDateInput = document.getElementById('subscriptionStartDate').value;
+            const manualEndDateInput = document.getElementById('manualEndDate').value;
+            const totalSessionsInput = document.getElementById('totalSessions').value;
+
+            // If manual end date is provided, use it directly
+            if (manualEndDateInput) {
+                const manualEndDate = new Date(manualEndDateInput);
+                manualEndDate.setHours(23, 59, 59, 999); // Set to end of day
+                return { finalEndDate: manualEndDate, bookedSessions: [] }; // Booked sessions not relevant for manual
+            }
+
+            // For private subscriptions, fixed 4 weeks
+            if (subscriptionType === 'private') {
+                const startDate = new Date(startDateInput);
+                const endDate = new Date(startDate);
+                endDate.setDate(startDate.getDate() + (4 * 7)); // 4 weeks later
+                endDate.setHours(23, 59, 59, 999); // Set to end of day
+                return { finalEndDate: endDate, bookedSessions: [] };
+            }
+
+            // For regular and chi_sao subscriptions (session-based)
+            const startDate = new Date(startDateInput);
+            const totalSessions = parseInt(totalSessionsInput, 10);
+            const trainingSchedule = getTrainingScheduleFromUI();
+
+            if (!startDateInput || isNaN(totalSessions) || totalSessions < 1 || Object.keys(trainingSchedule).length === 0) {
+                showAlert('الرجاء التأكد من إدخال تاريخ البدء وعدد الحصص وأيام التدريب.', 'warning');
+                return { finalEndDate: null, bookedSessions: [] };
+            }
+
+            const potentialSessionSlots = generatePotentialSessionSlots(startDate, trainingSchedule);
+
+            // Take only the required number of sessions
+            const bookedSessions = potentialSessionSlots.slice(0, totalSessions);
+
+            let finalEndDate = null;
+            if (bookedSessions.length > 0) {
+                // Find the latest date among the booked sessions
+                finalEndDate = new Date(Math.max(...bookedSessions.map(date => date.getTime())));
+                finalEndDate.setHours(23, 59, 59, 999); // Set to end of day
+            } else {
+                // Fallback: If no sessions could be booked (e.g., schedule empty),
+                // set end date to 4 weeks from start or just start date + 1 day
+                const fallbackEndDate = new Date(startDate);
+                fallbackEndDate.setDate(startDate.getDate() + (4 * 7)); // 4 weeks from start
+                fallbackEndDate.setHours(23, 59, 59, 999);
+                finalEndDate = fallbackEndDate;
+                showAlert('لم يتم حساب الحصص بناءً على الأيام المحددة. تم تعيين تاريخ انتهاء تقديري.', 'warning');
+            }
+
+            return { finalEndDate, bookedSessions };
+        }
+
+        // --- Form Handling ---
+
+        const studentForm = document.getElementById('studentForm');
+        const studentIdInput = document.getElementById('studentId');
+        const clearFormButton = document.getElementById('clearFormButton');
+
+        // Reset form to initial state
+        function resetForm() {
+            studentForm.reset();
+            studentIdInput.value = '';
+            document.querySelectorAll('input[name="trainingDays"]').forEach(cb => cb.checked = false);
+            dynamicTimesContainer.innerHTML = ''; // Clear dynamic times
+            sessionBasedDetailsContainer.classList.add('hidden'); // Hide session details
+            document.getElementById('totalSessions').value = 8; // Reset default
+            // Set default start date to today
+            document.getElementById('subscriptionStartDate').value = dateToInputFormat(new Date());
+        }
+
+        // Initialize form with today's date
+        resetForm();
+
+        studentForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (!userId) {
+                showAlert('المستخدم غير مصادق. الرجاء تحديث الصفحة والمحاولة مرة أخرى.', 'error');
+                return;
+            }
+
+            const studentId = studentIdInput.value;
+            const studentName = document.getElementById('studentName').value;
+            const studentPhone = document.getElementById('studentPhone').value;
+            const studentNotes = document.getElementById('studentNotes').value;
+            const subscriptionType = document.getElementById('subscriptionType').value;
+            const subscriptionStartDate = new Date(document.getElementById('subscriptionStartDate').value);
+
+            let calculatedDetails = { finalEndDate: null, bookedSessions: [] };
+            let trainingSchedule = {}; // Will store day => [times]
+            let totalSessionsCount = 0; // Will store total sessions if session-based
+
+            if (subscriptionType === 'regular' || subscriptionType === 'chi_sao') {
+                calculatedDetails = calculateSubscriptionDetails();
+                if (!calculatedDetails.finalEndDate) {
+                    // Calculation failed, prevent submission
+                    return;
+                }
+                trainingSchedule = getTrainingScheduleFromUI();
+                totalSessionsCount = parseInt(document.getElementById('totalSessions').value, 10);
+            } else { // private
+                // For private, manualEndDate takes precedence, otherwise calculate 4 weeks
+                const manualEndDateInput = document.getElementById('manualEndDate').value;
+                if (manualEndDateInput) {
+                    calculatedDetails.finalEndDate = new Date(manualEndDateInput);
+                } else {
+                    const endDate = new Date(subscriptionStartDate);
+                    endDate.setDate(subscriptionStartDate.getDate() + (4 * 7)); // 4 weeks later
+                    calculatedDetails.finalEndDate = endDate;
+                }
+                calculatedDetails.finalEndDate.setHours(23, 59, 59, 999); // Ensure end of day
+            }
+
+            const studentPayload = {
+                name: studentName,
+                phone: studentPhone,
+                notes: studentNotes,
+                subscriptionType: subscriptionType,
+                subscriptionStartDate: Timestamp.fromDate(subscriptionStartDate),
+                manualEndDate: document.getElementById('manualEndDate').value ? Timestamp.fromDate(new Date(document.getElementById('manualEndDate').value)) : null,
+                calculatedEndDate: calculatedDetails.finalEndDate ? Timestamp.fromDate(calculatedDetails.finalEndDate) : null,
+                trainingSchedule: trainingSchedule, // Stored as plain object
+                totalSessions: totalSessionsCount,
+                createdAt: studentId ? undefined : Timestamp.now(), // Only set on creation
+                updatedAt: Timestamp.now()
+            };
+
+            try {
+                if (studentId) {
+                    const docRef = doc(db, `artifacts/${appId}/users/${userId}/students_v8`, studentId);
+                    await updateDoc(docRef, studentPayload);
+                    showAlert('تم تحديث بيانات الطالب بنجاح!', 'success');
+                } else {
+                    await addDoc(studentsCollectionRef, studentPayload);
+                    showAlert('تمت إضافة الطالب بنجاح!', 'success');
+                }
+
+                // After saving, prepare WhatsApp message preview
+                let whatsappMessage = `مرحباً ${studentName}،\n\n`;
+                whatsappMessage += `اشتراكك في أكاديمية بروفيشنال وينج تسون:\n`;
+                whatsappMessage += `- نوع الاشتراك: ${subscriptionTypeSelect.options[subscriptionTypeSelect.selectedIndex].text}\n`;
+                whatsappMessage += `- تاريخ البدء: ${formatDate(subscriptionStartDate)}\n`;
+
+                const finalDisplayEndDate = studentPayload.manualEndDate || studentPayload.calculatedEndDate;
+                if (finalDisplayEndDate) {
+                    whatsappMessage += `- تاريخ الانتهاء/التجديد: ${formatDate(finalDisplayEndDate)}\n`;
+                }
+
+                if (subscriptionType === 'regular' || subscriptionType === 'chi_sao') {
+                    whatsappMessage += `- عدد الحصص: ${totalSessionsCount}\n`;
+                    whatsappMessage += `- أيام التدريب: \n`;
+                    for (const dayVal in trainingSchedule) {
+                        if (trainingSchedule[dayVal].length > 0) {
+                            whatsappMessage += `  - ${dayNamesArabic[parseInt(dayVal)]}: ${trainingSchedule[dayVal].map(formatTimeTo12Hour).join(', ')}\n`;
+                        }
+                    }
+                }
+                whatsappMessage += `\nنتطلع لرؤيتك!`;
+
+                document.getElementById('whatsappMessagePreview').textContent = whatsappMessage;
+                window.app.openModal('whatsappConfirmationModal');
+                document.getElementById('sendWhatsappButton').onclick = () => window.app.sendWhatsappMessage(studentPhone, whatsappMessage);
+
+                resetForm(); // Clear form after successful submission
+            } catch (e) {
+                console.error("Error adding/updating document: ", e);
+                showAlert(`خطأ في حفظ البيانات: ${e.message}`, 'error');
+            }
+        });
+
+        clearFormButton.addEventListener('click', resetForm);
+
+        // --- Data Display and Real-time Listener ---
+
+        /**
+         * Listens for real-time updates to the students collection and renders them.
+         */
+        function listenForStudentsData() {
+            if (!studentsCollectionRef) {
+                console.warn("studentsCollectionRef not yet defined. Skipping Firestore listener setup.");
+                return;
+            }
+
+            onSnapshot(studentsCollectionRef, (querySnapshot) => {
+                const students = [];
+                querySnapshot.forEach((doc) => {
+                    students.push({ id: doc.id, ...doc.data() });
+                });
+                allStudents = students; // Cache all students
+                renderStudents(allStudents); // Render all students initially
+                showAlert('تم تحديث قائمة الطلاب.', 'info');
+            }, (error) => {
+                console.error("Error listening to students collection: ", error);
+                showAlert(`خطأ في جلب بيانات الطلاب: ${error.message}`, 'error');
+            });
+        }
+
+        /**
+         * Renders the list of students into the table.
+         * @param {Array<Object>} studentsToRender - Array of student objects.
+         */
+        function renderStudents(studentsToRender) {
+            const studentsTableBody = document.getElementById('studentsTableBody');
+            studentsTableBody.innerHTML = ''; // Clear existing rows
+
+            if (studentsToRender.length === 0) {
+                studentsTableBody.innerHTML = `<tr><td colspan="7" class="py-4 text-center text-gray-500">لا توجد بيانات لعرضها.</td></tr>`;
+                return;
+            }
+
+            studentsToRender.forEach(student => {
+                const row = document.createElement('tr');
+                row.className = 'border-b border-gray-200 hover:bg-gray-50';
+
+                // Determine subscription status
+                let statusText = 'غير معروف';
+                let statusClass = '';
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                const endDate = student.manualEndDate?.toDate() || student.calculatedEndDate?.toDate();
+                if (endDate) {
+                    endDate.setHours(0, 0, 0, 0); // Normalize to start of day for comparison
+                    const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+
+                    if (daysRemaining < 0) {
+                        statusText = 'منتهي';
+                        statusClass = 'status-expired';
+                    } else if (daysRemaining <= 7) {
+                        statusText = `ينتهي خلال ${daysRemaining} أيام`;
+                        statusClass = 'status-warning';
+                    } else {
+                        statusText = 'نشط';
+                        statusClass = 'status-active';
+                    }
+                } else {
+                    statusText = 'لا يوجد تاريخ انتهاء';
+                    statusClass = 'text-gray-500';
+                }
+
+                // Shorten notes for display
+                const displayNotes = student.notes && student.notes.length > 50 ?
+                                     student.notes.substring(0, 47) + '...' :
+                                     student.notes || '';
+
+                // Format training schedule for display
+                let trainingScheduleDisplay = '';
+                if ((student.subscriptionType === 'regular' || student.subscriptionType === 'chi_sao') && student.trainingSchedule) {
+                    trainingScheduleDisplay = Object.entries(student.trainingSchedule)
+                        .map(([dayVal, times]) => {
+                            if (times && times.length > 0) {
+                                return `${dayNamesArabic[parseInt(dayVal)]}: ${times.map(formatTimeTo12Hour).join(', ')}`;
+                            }
+                            return '';
+                        })
+                        .filter(Boolean) // Remove empty strings
+                        .join('<br>');
+                }
+
+                row.innerHTML = `
+                    <td class="py-3 px-6 text-right">${student.name}</td>
+                    <td class="py-3 px-6 text-right">${student.phone}</td>
+                    <td class="py-3 px-6 text-right">
+                        ${student.subscriptionType === 'regular' ? 'مجموعة عادية' :
+                           student.subscriptionType === 'chi_sao' ? 'مجموعة تشي ساو' :
+                           'برايفت (٤ أسابيع)'}
+                        ${trainingScheduleDisplay ? `<br><small class="text-gray-500">${trainingScheduleDisplay}</small>` : ''}
+                    </td>
+                    <td class="py-3 px-6 text-right">${displayNotes}</td>
+                    <td class="py-3 px-6 text-right">${formatDate(endDate)}</td>
+                    <td class="py-3 px-6 text-right font-medium ${statusClass}">${statusText}</td>
+                    <td class="py-3 px-6 text-center whitespace-nowrap">
+                        <div class="flex items-center justify-center space-x-2 space-x-reverse">
+                            <button onclick="window.app.populateFormForEdit('${student.id}')"
+                                    class="bg-blue-500 text-white p-2 rounded-full hover:bg-blue-600 transition-colors shadow-sm" title="تعديل">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-7-9l4-4m-4 4l-4 4m-4-4l-4-4"/>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.232z" />
+                                </svg>
+                            </button>
+                            <button onclick="window.app.deleteStudent('${student.id}', '${student.name}')"
+                                    class="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors shadow-sm" title="حذف">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                            <button onclick="window.app.openWhatsAppReminder('${student.id}')"
+                                    class="bg-green-500 text-white p-2 rounded-full hover:bg-green-600 transition-colors shadow-sm" title="إرسال واتساب">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M.057 24l1.687-6.163c-1.041-1.804-1.597-3.903-1.597-6.18C.145 4.148 5.138 0 11.215 0c3.087 0 5.915 1.154 8.077 3.065l1.097 1.258-3.414 5.908c-1.636-.924-3.556-1.408-5.59-1.408-5.335 0-9.664 4.099-9.664 9.176 0 1.954.582 3.766 1.583 5.344L.057 24zm6.541-6.138l-.495-.3C4.858 15.704 3.743 13.567 3.743 11.215c0-4.047 3.328-7.369 7.425-7.369 2.072 0 4.013.844 5.463 2.339l.229.255-3.087 5.35c-1.554.876-3.376 1.34-5.267 1.34-4.047 0-7.37-3.322-7.37-7.369zm10.744 2.871l-1.097-1.258 3.414-5.908c1.636.924 3.556 1.408 5.59 1.408 5.335 0 9.664-4.099 9.664-9.176 0-1.954-.582-3.766-1.583-5.344l-.261-.453-1.687 6.163c1.041 1.804 1.597 3.903 1.597 6.18C23.855 19.852 18.862 24 12.785 24c-3.087 0-5.915-1.154-8.077-3.065z"/>
+                                </svg>
+                            </button>
+                            <button onclick="window.app.addToCalendar('${student.id}')"
+                                    class="bg-purple-500 text-white p-2 rounded-full hover:bg-purple-600 transition-colors shadow-sm" title="إضافة للتقويم">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                studentsTableBody.appendChild(row);
+            });
+        }
+
+        // --- Export to CSV ---
+
+        const exportToCsvButton = document.getElementById('exportToCsvButton');
+        exportToCsvButton.addEventListener('click', () => {
+            if (allStudents.length === 0) {
+                showAlert('لا توجد بيانات لتصديرها.', 'info');
+                return;
+            }
+            const csv = convertToCSV(allStudents);
+            const blob = new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' }); // Add UTF-8 BOM
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'students_data.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            showAlert('تم تصدير البيانات إلى ملف CSV بنجاح!', 'success');
+        });
+
+        /**
+         * Converts student data array to CSV format.
+         * @param {Array<Object>} data - Array of student objects.
+         * @returns {string} CSV string.
+         */
+        function convertToCSV(data) {
+            const headers = [
+                "الاسم",
+                "الهاتف",
+                "نوع الاشتراك",
+                "أيام/أوقات التدريب",
+                "إجمالي الحصص",
+                "تاريخ بدء الاشتراك",
+                "تاريخ انتهاء/تجديد يدوي",
+                "تاريخ انتهاء/تجديد محسوب",
+                "الحالة",
+                "ملاحظات"
+            ];
+
+            const rows = data.map(student => {
+                const endDate = student.manualEndDate?.toDate() || student.calculatedEndDate?.toDate();
+                let statusText = 'غير معروف';
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                if (endDate) {
+                    endDate.setHours(0, 0, 0, 0);
+                    const daysRemaining = Math.ceil((endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                    if (daysRemaining < 0) {
+                        statusText = 'منتهي';
+                    } else if (daysRemaining <= 7) {
+                        statusText = `ينتهي خلال ${daysRemaining} أيام`;
+                    } else {
+                        statusText = 'نشط';
+                    }
+                } else {
+                    statusText = 'لا يوجد تاريخ انتهاء';
+                }
+
+                let trainingScheduleCsv = '';
+                if ((student.subscriptionType === 'regular' || student.subscriptionType === 'chi_sao') && student.trainingSchedule) {
+                    trainingScheduleCsv = Object.entries(student.trainingSchedule)
+                        .map(([dayVal, times]) => {
+                            if (times && times.length > 0) {
+                                return `${dayNamesArabic[parseInt(dayVal)]}: ${times.map(formatTimeTo12Hour).join(', ')}`;
+                            }
+                            return '';
+                        })
+                        .filter(Boolean)
+                        .join('; '); // Use semicolon as separator for multiple days/times in one cell
+                }
+
+                return [
+                    `"${student.name || ''}"`,
+                    `="${student.phone || ''}"`, // Force Excel to treat as text
+                    `"${student.subscriptionType === 'regular' ? 'مجموعة عادية' :
+                       student.subscriptionType === 'chi_sao' ? 'مجموعة تشي ساو' :
+                       'برايفت (٤ أسابيع)'}"`,
+                    `"${trainingScheduleCsv}"`,
+                    `"${student.totalSessions || ''}"`,
+                    `"${formatDateForCSV(student.subscriptionStartDate)}"`,
+                    `"${formatDateForCSV(student.manualEndDate)}"`,
+                    `"${formatDateForCSV(student.calculatedEndDate)}"`,
+                    `"${statusText}"`,
+                    `"${student.notes || ''}"`
+                ].join(',');
+            });
+
+            return [headers.join(','), ...rows].join('\n');
+        }
+
+        // --- Search Functionality ---
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', (event) => {
+            const searchTerm = event.target.value.toLowerCase().trim();
+            if (searchTerm === '') {
+                renderStudents(allStudents); // Show all if search box is empty
+                return;
+            }
+            const filteredStudents = allStudents.filter(student =>
+                student.name.toLowerCase().includes(searchTerm) ||
+                student.phone.includes(searchTerm)
+            );
+            renderStudents(filteredStudents);
+        });
+
+        // --- Modals and Global Actions (window.app) ---
+        window.app = {
+            /**
+             * Opens a specified modal by making it visible.
+             * @param {string} modalId - The ID of the modal div.
+             */
+            openModal: (modalId) => {
+                document.getElementById(modalId).style.display = 'flex';
+            },
+
+            /**
+             * Closes a specified modal by hiding it.
+             * @param {string} modalId - The ID of the modal div.
+             */
+            closeModal: (modalId) => {
+                document.getElementById(modalId).style.display = 'none';
+            },
+
+            /**
+             * Populates the form with student data for editing.
+             * @param {string} studentId - The ID of the student to edit.
+             */
+            populateFormForEdit: (studentId) => {
+                const student = allStudents.find(s => s.id === studentId);
+                if (student) {
+                    studentIdInput.value = student.id;
+                    document.getElementById('studentName').value = student.name || '';
+                    document.getElementById('studentPhone').value = student.phone || '';
+                    document.getElementById('studentNotes').value = student.notes || '';
+                    document.getElementById('subscriptionType').value = student.subscriptionType || 'regular';
+                    document.getElementById('subscriptionStartDate').value = dateToInputFormat(student.subscriptionStartDate);
+                    document.getElementById('manualEndDate').value = student.manualEndDate ? dateToInputFormat(student.manualEndDate) : '';
+                    document.getElementById('totalSessions').value = student.totalSessions || 8;
+
+                    // Reset and update training days/times UI
+                    document.querySelectorAll('input[name="trainingDays"]').forEach(cb => cb.checked = false);
+                    dynamicTimesContainer.innerHTML = ''; // Clear existing dynamic times
+
+                    if (student.subscriptionType === 'regular' || student.subscriptionType === 'chi_sao') {
+                        sessionBasedDetailsContainer.classList.remove('hidden');
+                        if (student.trainingSchedule) {
+                            for (const dayValue in student.trainingSchedule) {
+                                if (student.trainingSchedule.hasOwnProperty(dayValue)) {
+                                    const checkbox = document.querySelector(`input[name="trainingDays"][value="${dayValue}"]`);
+                                    if (checkbox) checkbox.checked = true;
+                                }
+                            }
+                            // Call updateDynamicTimesUI with the existing schedule to render times
+                            updateDynamicTimesUI(student.trainingSchedule);
+                        }
+                    } else {
+                        sessionBasedDetailsContainer.classList.add('hidden');
+                    }
+                    showAlert('تم تحميل بيانات الطالب للتعديل.', 'info');
+                } else {
+                    showAlert('الطالب غير موجود.', 'error');
+                }
+            },
+
+            /**
+             * Prepares and opens the delete confirmation modal.
+             * @param {string} studentId - The ID of the student to delete.
+             * @param {string} studentName - The name of the student to delete.
+             */
+            deleteStudent: (studentId, studentName) => {
+                document.getElementById('studentNameToDelete').textContent = studentName;
+                window.app.openModal('deleteConfirmationModal');
+
+                const confirmDeleteButton = document.getElementById('confirmDeleteButton');
+                confirmDeleteButton.onclick = async () => {
+                    try {
+                        await deleteDoc(doc(db, `artifacts/${appId}/users/${userId}/students_v8`, studentId));
+                        showAlert('تم حذف الطالب بنجاح!', 'success');
+                        window.app.closeModal('deleteConfirmationModal');
+                    } catch (e) {
+                        console.error("Error removing document: ", e);
+                        showAlert(`خطأ في حذف الطالب: ${e.message}`, 'error');
+                    }
+                };
+            },
+
+            /**
+             * Prepares the WhatsApp message and opens the confirmation modal.
+             * @param {string} studentId - The ID of the student.
+             */
+            openWhatsAppReminder: (studentId) => {
+                const student = allStudents.find(s => s.id === studentId);
+                if (!student) {
+                    showAlert('الطالب غير موجود.', 'error');
+                    return;
+                }
+
+                let whatsappMessage = `مرحباً ${student.name}،\n\n`;
+                whatsappMessage += `تذكير باشتراكك في أكاديمية بروفيشنال وينج تسون:\n`;
+                whatsappMessage += `- نوع الاشتراك: ${student.subscriptionType === 'regular' ? 'مجموعة عادية' :
+                                   student.subscriptionType === 'chi_sao' ? 'مجموعة تشي ساو' :
+                                   'برايفت (٤ أسابيع)'}\n`;
+                whatsappMessage += `- تاريخ البدء: ${formatDate(student.subscriptionStartDate)}\n`;
+
+                const finalDisplayEndDate = student.manualEndDate || student.calculatedEndDate;
+                if (finalDisplayEndDate) {
+                    whatsappMessage += `- تاريخ الانتهاء/التجديد: ${formatDate(finalDisplayEndDate)}\n`;
+                }
+
+                if ((student.subscriptionType === 'regular' || student.subscriptionType === 'chi_sao') && student.totalSessions > 0) {
+                    whatsappMessage += `- عدد الحصص: ${student.totalSessions}\n`;
+                    if (student.trainingSchedule) {
+                        whatsappMessage += `- أيام التدريب: \n`;
+                        for (const dayVal in student.trainingSchedule) {
+                            if (student.trainingSchedule.hasOwnProperty(dayVal) && student.trainingSchedule[dayVal].length > 0) {
+                                whatsappMessage += `  - ${dayNamesArabic[parseInt(dayVal)]}: ${student.trainingSchedule[dayVal].map(formatTimeTo12Hour).join(', ')}\n`;
+                            }
+                        }
+                    }
+                }
+                whatsappMessage += `\nنتطلع لرؤيتك قريباً!`;
+
+                document.getElementById('whatsappMessagePreview').textContent = whatsappMessage;
+                window.app.openModal('whatsappConfirmationModal');
+                document.getElementById('sendWhatsappButton').onclick = () => window.app.sendWhatsappMessage(student.phone, whatsappMessage);
+            },
+
+            /**
+             * Sends a WhatsApp message (redirects to WhatsApp web/app).
+             * @param {string} phoneNumber - The phone number to send to.
+             * @param {string} message - The message text.
+             */
+            sendWhatsappMessage: (phoneNumber, message) => {
+                // Remove non-numeric characters from phone number for WhatsApp URL
+                const cleanedPhone = phoneNumber.replace(/\D/g, '');
+                // Ensure correct international format if not already (e.g., Egypt +20)
+                // This is a simple example; a more robust solution might handle various country codes.
+                const whatsappUrl = `https://wa.me/+2${cleanedPhone}?text=${encodeURIComponent(message)}`;
+                window.open(whatsappUrl, '_blank');
+                window.app.closeModal('whatsappConfirmationModal');
+                showAlert('تم فتح تطبيق واتساب لإرسال الرسالة.', 'info');
+            },
+
+            /**
+             * Adds a subscription reminder to Google Calendar.
+             * @param {string} studentId - The ID of the student.
+             */
+            addToCalendar: (studentId) => {
+                const student = allStudents.find(s => s.id === studentId);
+                if (!student) {
+                    showAlert('الطالب غير موجود.', 'error');
+                    return;
+                }
+
+                const startDate = student.subscriptionStartDate?.toDate();
+                const endDate = student.manualEndDate?.toDate() || student.calculatedEndDate?.toDate();
+
+                if (!startDate) {
+                    showAlert('لا يوجد تاريخ بدء للاشتراك لإضافته للتقويم.', 'warning');
+                    return;
+                }
+
+                // Default to 4 weeks if no specific end date is calculated/manual
+                const defaultEndDate = endDate || new Date(startDate);
+                if (!endDate) {
+                   defaultEndDate.setDate(startDate.getDate() + (4 * 7)); // 4 weeks later
+                }
+
+                const formatGoogleCalendarDate = (date) => {
+                    if (!date) return '';
+                    // Google Calendar expects YYYYMMDDTHHMMSSZ for full date-time or YYYYMMDD for all-day.
+                    // For a reminder, we'll use an all-day event for simplicity.
+                    const year = date.getFullYear();
+                    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                    const day = date.getDate().toString().padStart(2, '0');
+                    return `${year}${month}${day}`;
+                };
+
+                const eventTitle = `تذكير اشتراك ${student.name} - أكاديمية وينج تسون`;
+                let eventDetails = `نوع الاشتراك: ${student.subscriptionType === 'regular' ? 'مجموعة عادية' :
+                                   student.subscriptionType === 'chi_sao' ? 'مجموعة تشي ساو' :
+                                   'برايفت (٤ أسابيع)'}\n`;
+                eventDetails += `تاريخ البدء: ${formatDate(startDate)}\n`;
+                eventDetails += `تاريخ الانتهاء/التجديد: ${formatDate(endDate || defaultEndDate)}\n`;
+                eventDetails += `رقم الهاتف: ${student.phone}\n`;
+                if (student.notes) {
+                    eventDetails += `ملاحظات: ${student.notes}\n`;
+                }
+
+                const dates = `${formatGoogleCalendarDate(startDate)}/${formatGoogleCalendarDate(defaultEndDate)}`;
+                // Add 1 day to end date for Google Calendar to include the end day as well
+                const calendarEndDateForEvent = new Date(defaultEndDate);
+                calendarEndDateForEvent.setDate(calendarEndDateForEvent.getDate() + 1);
+                const googleCalendarUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(eventTitle)}&dates=${formatGoogleCalendarDate(startDate)}/${formatGoogleCalendarDate(calendarEndDateForEvent)}&details=${encodeURIComponent(eventDetails)}&sf=true&output=xml`;
+
+                window.open(googleCalendarUrl, '_blank');
+                showAlert('تم فتح Google Calendar لإضافة التذكير.', 'info');
+            }
+        };
+
+    </script>
+</body>
+</html>
+
+ 
